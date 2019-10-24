@@ -6,18 +6,42 @@ const ROWS = GAME_HEIGHT / CELL_SIZE;
 const COLS = GAME_WIDTH / CELL_SIZE;
 
 let cellManager = undefined;
+let cellManagerController = undefined;
 //#endregion
 
-//#region PixiJS setup
+//#region lib keypress setup
+const keyListener = new window.keypress.Listener();
+//#endregion
+
+//#region lib PixiJS setup
 const pixiApp = new PIXI.Application({
-  width: 1280, height: 720, backgroundColor: 0x111111, resolution: window.devicePixelRatio || 1,
+  width: 1280,
+  height: 720,
+  backgroundColor: 0x111111,
+  resolution: window.devicePixelRatio || 1
 });
 document.getElementById("game").appendChild(pixiApp.view);
 //#endregion
 
 //#region init
 function init() {
+  // make the cellManager and cellManagerController
   cellManager = new CellManager(ROWS, COLS, CELL_SIZE, true, true);
+  cellManagerController = new CellManagerController(cellManager);
+
+  // setup keybinds
+  keyListener.simple_combo("space", function() {
+    cellManagerController.togglePause();
+  });
+  keyListener.simple_combo("r", function() {
+    cellManagerController.randomize();
+  });
+  keyListener.simple_combo("c", function() {
+    cellManagerController.clear();
+  });
+  keyListener.simple_combo("n", function() {
+    cellManagerController.nextGeneration();
+  });
 
   // start the gameloop
   pixiApp.ticker.add(() => {
@@ -44,6 +68,39 @@ function lerp(a, b, amount) {
 }
 //#endregion
 
+class CellManagerController
+{
+  cellManager = undefined;
+
+  constructor(cellManager)
+  {
+    this.cellManager = cellManager;
+  }
+
+  togglePause()
+  {
+    this.cellManager.togglePause();
+  }
+
+  randomize()
+  {
+    this.cellManager.randomize();
+  }
+
+  clear()
+  {
+    this.cellManager.clear();
+  }
+
+  nextGeneration()
+  {
+    if (this.cellManager.paused)
+    {
+      this.cellManager.updateGeneration();
+    }
+  }
+}
+
 class CellManager
 {
   cellGraphics = undefined;
@@ -62,6 +119,7 @@ class CellManager
   timer = 0;
   cellUpdateFPS = 15;
   lerpAmount = 0.075;
+  paused = false;
 
   constructor(rows, cols, cellSize, random, wrap)
   {
@@ -108,14 +166,22 @@ class CellManager
   //#region gameloop
   update(dt)
   {
-    this.timer += dt;
-    if (this.timer >= 1/this.cellUpdateFPS*1000)
+    if (!this.paused)
     {
-      this.timer -= 1/this.cellUpdateFPS*1000;
-      this.calculateNextGeneration();
-      this.applyNextGeneration();
+      this.timer += dt;
+      if (this.timer >= 1/this.cellUpdateFPS*1000)
+      {
+        this.timer -= 1/this.cellUpdateFPS*1000;
+        this.updateGeneration();
+      }
     }
     this.updateAlpha();
+  }
+
+  updateGeneration()
+  {
+    this.calculateNextGeneration();
+    this.applyNextGeneration();
   }
 
   draw()
@@ -169,6 +235,11 @@ class CellManager
     }
   }
   //#endregion
+
+  togglePause()
+  {
+    this.paused = !this.paused;
+  }
 
   updateAlpha()
   {

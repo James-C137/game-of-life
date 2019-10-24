@@ -48,6 +48,7 @@ class CellManager
 {
   cellGraphics = undefined;
   CELL_COLOR   = 0xEEEEEE;
+  DECAY_COLOR  = 0x15B2D1;
 
   cells      = undefined;
   nextCells  = undefined;
@@ -59,8 +60,8 @@ class CellManager
   cellSize   = undefined;
 
   timer = 0;
-  cellUpdateFPS = 20;
-  lerpAmount = 0.25;
+  cellUpdateFPS = 15;
+  lerpAmount = 0.075;
 
   constructor(rows, cols, cellSize, random, wrap)
   {
@@ -122,8 +123,10 @@ class CellManager
     this.cellGraphics.clear();
     for (let row = 0; row < ROWS; row++) {
       for (let col = 0; col < COLS; col++) {
-        this.cellGraphics.beginFill(this.CELL_COLOR, this.getAlpha(row, col));
-        this.cellGraphics.drawRect(col * this.cellSize, row * this.cellSize, this.cellSize, this.cellSize);
+        let color = this.getAlive(row, col) ? this.CELL_COLOR : this.DECAY_COLOR;
+        this.cellGraphics.beginFill(color, this.getAlpha(row, col));
+        // this.cellGraphics.drawRect(col * this.cellSize, row * this.cellSize, this.cellSize, this.cellSize);
+        this.cellGraphics.drawRect(col * this.cellSize + 1, row * this.cellSize + 1, this.cellSize - 2, this.cellSize - 2);
       }
     }
   }
